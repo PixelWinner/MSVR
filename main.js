@@ -6,6 +6,10 @@ let shProgram;                  // A shader program
 let spaceball;                  // A SimpleRotator object that lets the user rotate the view by mouse.
 let stereoCam;                  // Object holding stereo camera and its parameters
 
+// Variables for WebSocket and phone rotation matrix
+let websocket = null;
+let phoneRotationMatrix = null;
+let usePhoneOrientation = false;
 
 // Constructor
 function ShaderProgram(name, program) {
@@ -25,6 +29,141 @@ function ShaderProgram(name, program) {
     }
 }
 
+// Implementation of getRotationMatrixFromVector from Android
+function getRotationMatrixFromVector(rotationMatrix, rotationVector) {
+    const q0 = rotationVector[3]; // w
+    const q1 = rotationVector[0]; // x
+    const q2 = rotationVector[1]; // y
+    const q3 = rotationVector[2]; // z
+    
+    const sq_q1 = 2 * q1 * q1;
+    const sq_q2 = 2 * q2 * q2;
+    const sq_q3 = 2 * q3 * q3;
+    const q1_q2 = 2 * q1 * q2;
+    const q3_q0 = 2 * q3 * q0;
+    const q1_q3 = 2 * q1 * q3;
+    const q2_q0 = 2 * q2 * q0;
+    const q2_q3 = 2 * q2 * q3;
+    const q1_q0 = 2 * q1 * q0;
+    
+    // Fill matrix in row-major order
+    rotationMatrix[0] = 1 - sq_q2 - sq_q3;
+    rotationMatrix[1] = q1_q2 - q3_q0;
+    rotationMatrix[2] = q1_q3 + q2_q0;
+    
+    rotationMatrix[3] = q1_q2 + q3_q0;
+    rotationMatrix[4] = 1 - sq_q1 - sq_q3;
+    rotationMatrix[5] = q2_q3 - q1_q0;
+    
+    rotationMatrix[6] = q1_q3 - q2_q0;
+    rotationMatrix[7] = q2_q3 + q1_q0;
+    rotationMatrix[8] = 1 - sq_q1 - sq_q2;
+    
+    // Convert to a format suitable for WebGL (from row-major to 4x4 matrix)
+    const m4Matrix = [
+        rotationMatrix[0], rotationMatrix[3], rotationMatrix[6], 0,
+        rotationMatrix[1], rotationMatrix[4], rotationMatrix[7], 0,
+        rotationMatrix[2], rotationMatrix[5], rotationMatrix[8], 0,
+        0, 0, 0, 1
+    ];
+    
+    return m4Matrix;
+}
+
+// Function to connect to WebSocket
+function connectToSensorServer() {
+    const wsUrl = document.getElementById('wsUrl').value;
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const statusElement = document.getElementById('connectionStatus');
+    
+    if (websocket) {
+        websocket.close();
+        websocket = null;
+    }
+    
+    try {
+        websocket = new WebSocket(wsUrl);
+        
+        websocket.onopen = function() {
+            console.log('Connected to sensor server');
+            statusElement.textContent = 'Підключено';
+            statusElement.classList.add('connected');
+            connectBtn.disabled = true;
+            disconnectBtn.disabled = false;
+            usePhoneOrientation = true;
+        };
+        
+        websocket.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.values && data.values.length >= 4) {
+                    // game_rotation_vector returns quaternion [x, y, z, w]
+                    const rotationVector = [
+                        data.values[0], // x
+                        data.values[1], // y
+                        data.values[2], // z
+                        data.values[3]  // w (scalar)
+                    ];
+
+                    updateSensorValuesDisplay(rotationVector);
+                    
+                    // Create a new rotation matrix and fill it
+                    const tempMatrix = new Array(9).fill(0);
+                    phoneRotationMatrix = getRotationMatrixFromVector(tempMatrix, rotationVector);
+                    
+                    // Trigger redraw
+                    draw();
+                }
+            } catch (error) {
+                console.error('Error processing sensor data:', error);
+            }
+        };
+        
+        websocket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            statusElement.textContent = 'Помилка';
+            statusElement.classList.remove('connected');
+        };
+        
+        websocket.onclose = function() {
+            console.log('Disconnected from sensor server');
+            statusElement.textContent = 'Відключено';
+            statusElement.classList.remove('connected');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            usePhoneOrientation = false;
+            phoneRotationMatrix = null;
+        };
+    } catch (error) {
+        console.error('Failed to connect to sensor server:', error);
+        statusElement.textContent = 'Помилка з\'єднання';
+        statusElement.classList.remove('connected');
+    }
+}
+
+// Function to update sensor values display with 2 decimal places
+function updateSensorValuesDisplay(rotationVector) {
+    const elements = ['sensorValueX', 'sensorValueY', 'sensorValueZ', 'sensorValueW'];
+    elements.forEach((id, index) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = rotationVector[index].toFixed(2);
+        } else {
+            console.warn(`Element ${id} not found`);
+        }
+    });
+}
+
+// Function to disconnect from WebSocket
+function disconnectFromSensorServer() {
+    if (websocket) {
+        websocket.close();
+        websocket = null;
+    }
+    updateSensorValuesDisplay([0, 0, 0, 0]);
+}
 
 /* Draws a colored cube, along with a set of coordinate axes.
  * (Note that the use of the above drawPrimitive function is not an efficient
@@ -34,11 +173,18 @@ function draw() {
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
-    /* Set the values of the projection transformation */
-    //let projection = m4.perspective(Math.PI/8, 1, 8, 12);
+    /* Get the view matrix from the SimpleRotator object or from the phone.*/
+    let modelView;
+    if (usePhoneOrientation && phoneRotationMatrix) {
+         // Apply inverse rotation to compensate for the default rotation in the mouse control mode
+         let inverseRotation = m4.axisRotation([0.707, 0.707, 0], -0.7);
     
-    /* Get the view matrix from the SimpleRotator object.*/
-    let modelView = spaceball.getViewMatrix();
+         // Multiply phone matrix with compensating matrix
+         modelView = m4.multiply(inverseRotation, phoneRotationMatrix);
+    } else {
+        // Otherwise use standard rotation from SimpleRotator
+        modelView = spaceball.getViewMatrix();
+    }
 
     let rotateToPointZero = m4.axisRotation([0.707,0.707,0], 0.7);
     let translateToPointZero = m4.translation(0,0,-10);
@@ -266,5 +412,14 @@ function init() {
     // Инициализируем элементы управления стереокамерой
     initControls();
 
-    draw();
+    // Add event handlers for WebSocket buttons
+    document.getElementById('connectBtn').addEventListener('click', connectToSensorServer);
+    document.getElementById('disconnectBtn').addEventListener('click', disconnectFromSensorServer);
+
+    // Continuous rendering for better responsiveness
+    function animate() {
+        draw();
+        requestAnimationFrame(animate);
+    }
+    animate();
 }
