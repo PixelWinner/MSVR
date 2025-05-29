@@ -1,11 +1,60 @@
 <!DOCTYPE html>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="ua"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 
 <title>PA#1</title>
 <style>
     body {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        gap: 16px;
+        justify-content: center;
         background-color: #EEEEEE;
+        font-family: Arial, sans-serif;
+    }
+    
+    .controls-panel {
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        max-width: 600px;
+    }
+    
+    .control-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        gap: 10px;
+    }
+    
+    .control-group label {
+        min-width: 180px;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .control-group input[type="range"] {
+        flex: 1;
+        margin: 0 10px;
+    }
+    
+    .control-group input[type="number"] {
+        width: 80px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    
+    .controls-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #333;
+        border-bottom: 2px solid #007acc;
+        padding-bottom: 5px;
     }
 </style>
 
@@ -19,11 +68,33 @@
 </head>
 <body onload="init()">
 
-<h2>A Cube with "Trackball" Mouse Rotation</h2>
-
-<p id="message">Drag your mouse on the cube to rotate it.<br>
-(On a touch screen, you can use your finger.)</p>
-
+<div class="controls-panel">
+    <div class="controls-title">Керування стереокамерою</div>
+    
+    <div class="control-group">
+        <label for="eyeSeparation">Відстань між очима:</label>
+        <input type="range" id="eyeSeparation" min="0.1" max="2.0" step="0.1" value="0.7">
+        <input type="number" id="eyeSeparationValue" min="0.1" max="2.0" step="0.1" value="0.7">
+    </div>
+    
+    <div class="control-group">
+        <label for="convergence">Конвергенція:</label>
+        <input type="range" id="convergence" min="5.0" max="30.0" step="0.5" value="14.0">
+        <input type="number" id="convergenceValue" min="5.0" max="30.0" step="0.5" value="14.0">
+    </div>
+    
+    <div class="control-group">
+        <label for="aspectRatio">Співвідношення сторін:</label>
+        <input type="range" id="aspectRatio" min="0.5" max="3.0" step="0.1" value="1.3">
+        <input type="number" id="aspectRatioValue" min="0.5" max="3.0" step="0.1" value="1.3">
+    </div>
+    
+    <div class="control-group">
+        <label for="fov">Поле зору (радіани):</label>
+        <input type="range" id="fov" min="0.1" max="1.5" step="0.05" value="0.4">
+        <input type="number" id="fovValue" min="0.1" max="1.5" step="0.05" value="0.4">
+    </div>
+</div>
 
 <div id="canvas-holder">
    <canvas width="600" height="600" id="webglcanvas" style="background-color:red"></canvas>

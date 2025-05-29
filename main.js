@@ -192,6 +192,50 @@ function createProgram(gl, vShader, fShader) {
 
 
 /**
+ * Функция для обновления параметров стереокамеры
+ */
+function updateStereoCameraParams() {
+    if (stereoCam) {
+        stereoCam.eyeSeparation = parseFloat(document.getElementById('eyeSeparation').value);
+        stereoCam.convergence = parseFloat(document.getElementById('convergence').value);
+        stereoCam.aspectRatio = parseFloat(document.getElementById('aspectRatio').value);
+        stereoCam.fov = parseFloat(document.getElementById('fov').value);
+        
+        // Перерисовываем сцену с новыми параметрами
+        draw();
+    }
+}
+
+/**
+ * Функция для синхронизации значений между слайдерами и числовыми полями
+ */
+function syncControlValues(paramName, value) {
+    document.getElementById(paramName).value = value;
+    document.getElementById(paramName + 'Value').value = value;
+    updateStereoCameraParams();
+}
+
+/**
+ * Инициализация обработчиков событий для элементов управления
+ */
+function initControls() {
+    // Массив параметров для настройки
+    const params = ['eyeSeparation', 'convergence', 'aspectRatio', 'fov'];
+    
+    params.forEach(param => {
+        // Обработчики для слайдеров
+        document.getElementById(param).addEventListener('input', function() {
+            syncControlValues(param, this.value);
+        });
+        
+        // Обработчики для числовых полей
+        document.getElementById(param + 'Value').addEventListener('input', function() {
+            syncControlValues(param, this.value);
+        });
+    });
+}
+
+/**
  * initialization function that will be called when the page has loaded
  */
 function init() {
@@ -200,7 +244,7 @@ function init() {
         canvas = document.getElementById("webglcanvas");
         gl = canvas.getContext("webgl");
         if ( ! gl ) {
-            throw "Browser does not support WebGL";
+            throw new Error("Browser does not support WebGL");
         }
     }
     catch (e) {
@@ -218,6 +262,9 @@ function init() {
     }
 
     spaceball = new TrackballRotator(canvas, draw, 0);
+
+    // Инициализируем элементы управления стереокамерой
+    initControls();
 
     draw();
 }
