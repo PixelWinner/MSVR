@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>AR Astroidal Torus</title>
+  <title>Sievert Surface AR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   
   <style>
@@ -202,20 +202,22 @@
     // --- Sievert Surface Component ---
     AFRAME.registerComponent('sievert-surface', {
       schema: {
-        C: {type: 'number', default: 1},
-        uSteps: {type: 'int', default: 50},
-        vSteps: {type: 'int', default: 50},
-        color: {type: 'color', default: '#4fc3f7'},
-        wireframe: {type: 'boolean', default: false}
+        C:         { type: 'number', default: 1 },
+        uSteps:    { type: 'int',    default: 50 },
+        vSteps:    { type: 'int',    default: 50 },
+        color:     { type: 'color',  default: '#4fc3f7' },
+        wireframe: { type: 'boolean', default: false }
       },
+
       init: function() {
         this.createSurface();
       },
+
       update: function(oldData) {
         if (this.mesh && (
-            oldData.C !== this.data.C ||
-            oldData.uSteps !== this.data.uSteps ||
-            oldData.vSteps !== this.data.vSteps
+                oldData.C      !== this.data.C ||
+                oldData.uSteps !== this.data.uSteps ||
+                oldData.vSteps !== this.data.vSteps
         )) {
           this.el.removeObject3D('mesh');
           this.createSurface();
@@ -228,29 +230,42 @@
           }
         }
       },
+
       createSurface: function() {
         const data = this.data;
         const geometry = new THREE.BufferGeometry();
-        let vertices = [];
-        let indices = [];
-        let uSteps = data.uSteps;
-        let vSteps = data.vSteps;
-        let C = data.C;
-        // Генерация вершин
+        const vertices = [];
+        const indices  = [];
+        const uSteps = data.uSteps;
+        const vSteps = data.vSteps;
+        const C = data.C;
+
+        // Смещение, чтобы v не попадал ровно на 0 и PI
+        const eps = 0.0001;
+
         for (let i = 0; i <= uSteps; i++) {
+          // u от -π/2 до +π/2
           let u = ((i / uSteps) - 0.5) * Math.PI;
+
           for (let j = 0; j <= vSteps; j++) {
-            let v = (j / vSteps) * Math.PI;
+            // v от eps до π - eps
+            let t = j / vSteps;
+            let v = t * (Math.PI - 2 * eps) + eps;
+
+            // формулы Sievert Surface
             let phi = -u / Math.sqrt(C + 1) + Math.atan(Math.tan(u) * Math.sqrt(C + 1));
             let a = 2 / (C + 1 - C * Math.sin(v) ** 2 * Math.cos(u));
             let r = (a * Math.sqrt((C + 1) * (1 + C * Math.sin(u) ** 2)) * Math.sin(v)) / Math.sqrt(C);
+
             let x = r * Math.cos(phi) - 2;
             let y = r * Math.sin(phi);
-            let z = (Math.log(Math.tan(v / 2)) + a * (C + 1) * Math.cos(v)) / Math.sqrt(C);
+            let z = (Math.log(Math.tan(v / 2)) + (a * (C + 1) * Math.cos(v))) / Math.sqrt(C);
+
             vertices.push(x, y, z);
           }
         }
-        // Генерация индексов
+
+        // Индексы для треугольников
         for (let i = 0; i < uSteps; i++) {
           for (let j = 0; j < vSteps; j++) {
             let a = i * (vSteps + 1) + j;
@@ -261,17 +276,21 @@
             indices.push(c, b, d);
           }
         }
+
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         geometry.setIndex(indices);
         geometry.computeVertexNormals();
+
         const material = new THREE.MeshStandardMaterial({
           color: data.color,
           side: THREE.DoubleSide,
           wireframe: data.wireframe
         });
+
         this.mesh = new THREE.Mesh(geometry, material);
         this.el.setObject3D('mesh', this.mesh);
       },
+
       remove: function() {
         if (this.mesh) {
           this.el.removeObject3D('mesh');
@@ -283,7 +302,7 @@
 
 <body>
   <div class="loading" id="loading">Initializing AR Camera...</div>
-  <div class="title">Astroidal Torus AR</div>
+  <div class="title">Sievert Surface AR</div>
   <div class="info-panel" id="info">Looking for marker...</div>
   <div class="instructions" id="instructions">Point your camera at the marker to see the 3D model</div>
 
