@@ -1,215 +1,360 @@
-<!DOCTYPE html>
-<html lang="ua"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
-
-<title>PA#2</title>
-<style>
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AR Astroidal Torus</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  
+  <style>
     body {
-        display: flex;
-        align-items: center;
-        flex-direction: column;
-        gap: 16px;
-        justify-content: center;
-        background-color: #EEEEEE;
-        font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
     }
     
-    .controls-panel {
-        background-color: #f9f9f9;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-        max-width: 600px;
+    .info-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 60, 114, 0.8));
+      color: white;
+      padding: 15px 20px;
+      border-radius: 15px;
+      z-index: 999;
+      font-size: 16px;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
     }
     
-    .control-group {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-        gap: 10px;
+    .info-panel.marker-found {
+      background: linear-gradient(135deg, rgba(0, 128, 0, 0.8), rgba(34, 139, 34, 0.8));
+      transform: scale(1.05);
     }
     
-    .control-group label {
-        min-width: 180px;
-        font-weight: bold;
-        color: #333;
+    .info-panel.marker-lost {
+      background: linear-gradient(135deg, rgba(220, 20, 60, 0.8), rgba(178, 34, 34, 0.8));
+      animation: pulse 1s infinite;
     }
     
-    .control-group input[type="range"] {
-        flex: 1;
-        margin: 0 10px;
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
     
-    .control-group input[type="number"] {
-        width: 80px;
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    .title {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+      color: white;
+      padding: 12px 18px;
+      border-radius: 12px;
+      z-index: 999;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
     
-    .controls-title {
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 15px;
-        color: #333;
-        border-bottom: 2px solid #007acc;
-        padding-bottom: 5px;
+    .instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(30, 60, 114, 0.7));
+      color: white;
+      padding: 12px 20px;
+      border-radius: 25px;
+      z-index: 999;
+      font-size: 14px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
     }
     
-    .phone-controls {
-        background-color: #f0f8ff;
-        border: 1px solid #007acc;
-        border-radius: 8px;
-        padding: 15px;
-        margin-top: 20px;
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+      font-weight: 500;
+      text-align: center;
+      z-index: 998;
     }
     
-    .text-input {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        margin-bottom: 10px;
-        font-family: monospace;
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 10px;
     }
     
-    .button-row {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     
-    .action-button {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        background-color: #007acc;
-        color: white;
-        cursor: pointer;
-        font-weight: bold;
+    /* Mobile adjustments */
+    @media only screen and (max-width: 600px) {
+      .info-panel {
+        font-size: 14px;
+        padding: 12px 16px;
+        top: 15px;
+        left: 15px;
+      }
+      
+      .title {
+        font-size: 12px;
+        padding: 10px 14px;
+        top: 15px;
+        right: 15px;
+      }
+      
+      .instructions {
+        font-size: 12px;
+        padding: 10px 16px;
+        bottom: 15px;
+        max-width: 90%;
+      }
+      
+      .loading {
+        font-size: 16px;
+      }
     }
     
-    .action-button:hover {
-        background-color: #005a99;
+    @media only screen and (max-width: 480px) {
+      .info-panel {
+        font-size: 12px;
+        padding: 10px 14px;
+      }
+      
+      .title {
+        font-size: 11px;
+        padding: 8px 12px;
+      }
+      
+      .instructions {
+        font-size: 11px;
+        padding: 8px 14px;
+      }
     }
-    
-    .action-button:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
-    
-    .connection-status {
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-    
-    .connected {
-        color: #28a745;
-    }
-    
-    .sensor-value-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-top: 10px;
-    }
-    
-    .sensor-value-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 5px;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-    }
-    
-    .sensor-label {
-        font-weight: bold;
-    }
-    
-    .sensor-value {
-        font-family: monospace;
-        color: #007acc;
-    }
-</style>
+  </style>
 
-<script src="./Utils/trackball-rotator.js"></script>
-<script src="./Utils/m4.js"></script>
-<script src="./shader.js"></script>
-<script src="./Model.js"></script>
-<script src="./StereoCamera.js"></script>
-<script src="./main.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.3.0/dist/aframe-master.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  
+  <script>
+    AFRAME.registerComponent('multi-axis-rotation', {
+      schema: {
+        enabled: {type: 'boolean', default: true},
+        speed: {type: 'number', default: 0.3},
+        mode: {type: 'string', default: 'y'}
+      },
 
+      init: function() {
+        this.rotationValues = {
+          x: 0,
+          y: 0,
+          z: 0
+        };
+      },
+
+      tick: function(time, deltaTime) {
+        if (!this.data.enabled) return;
+
+        const dt = deltaTime / 1000;
+        const speed = this.data.speed;
+        const mode = this.data.mode;
+
+        if (mode.includes('x')) {
+          this.rotationValues.x += dt * speed;
+        }
+
+        if (mode.includes('y')) {
+          this.rotationValues.y += dt * speed;
+        }
+
+        if (mode.includes('z')) {
+          this.rotationValues.z += dt * speed;
+        }
+
+        this.el.object3D.rotation.x = this.rotationValues.x;
+        this.el.object3D.rotation.y = this.rotationValues.y;
+        this.el.object3D.rotation.z = this.rotationValues.z;
+      }
+    });
+
+    // --- Sievert Surface Component ---
+    AFRAME.registerComponent('sievert-surface', {
+      schema: {
+        C: {type: 'number', default: 1},
+        uSteps: {type: 'int', default: 50},
+        vSteps: {type: 'int', default: 50},
+        color: {type: 'color', default: '#4fc3f7'},
+        wireframe: {type: 'boolean', default: false}
+      },
+      init: function() {
+        this.createSurface();
+      },
+      update: function(oldData) {
+        if (this.mesh && (
+            oldData.C !== this.data.C ||
+            oldData.uSteps !== this.data.uSteps ||
+            oldData.vSteps !== this.data.vSteps
+        )) {
+          this.el.removeObject3D('mesh');
+          this.createSurface();
+        } else if (this.mesh) {
+          if (oldData.color !== this.data.color) {
+            this.mesh.material.color.set(this.data.color);
+          }
+          if (oldData.wireframe !== this.data.wireframe) {
+            this.mesh.material.wireframe = this.data.wireframe;
+          }
+        }
+      },
+      createSurface: function() {
+        const data = this.data;
+        const geometry = new THREE.BufferGeometry();
+        let vertices = [];
+        let indices = [];
+        let uSteps = data.uSteps;
+        let vSteps = data.vSteps;
+        let C = data.C;
+        // Генерация вершин
+        for (let i = 0; i <= uSteps; i++) {
+          let u = ((i / uSteps) - 0.5) * Math.PI;
+          for (let j = 0; j <= vSteps; j++) {
+            let v = (j / vSteps) * Math.PI;
+            let phi = -u / Math.sqrt(C + 1) + Math.atan(Math.tan(u) * Math.sqrt(C + 1));
+            let a = 2 / (C + 1 - C * Math.sin(v) ** 2 * Math.cos(u));
+            let r = (a * Math.sqrt((C + 1) * (1 + C * Math.sin(u) ** 2)) * Math.sin(v)) / Math.sqrt(C);
+            let x = r * Math.cos(phi) - 2;
+            let y = r * Math.sin(phi);
+            let z = (Math.log(Math.tan(v / 2)) + a * (C + 1) * Math.cos(v)) / Math.sqrt(C);
+            vertices.push(x, y, z);
+          }
+        }
+        // Генерация индексов
+        for (let i = 0; i < uSteps; i++) {
+          for (let j = 0; j < vSteps; j++) {
+            let a = i * (vSteps + 1) + j;
+            let b = (i + 1) * (vSteps + 1) + j;
+            let c = a + 1;
+            let d = b + 1;
+            indices.push(a, b, c);
+            indices.push(c, b, d);
+          }
+        }
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        const material = new THREE.MeshStandardMaterial({
+          color: data.color,
+          side: THREE.DoubleSide,
+          wireframe: data.wireframe
+        });
+        this.mesh = new THREE.Mesh(geometry, material);
+        this.el.setObject3D('mesh', this.mesh);
+      },
+      remove: function() {
+        if (this.mesh) {
+          this.el.removeObject3D('mesh');
+        }
+      }
+    });
+  </script>
 </head>
-<body onload="init()">
 
-<div class="controls-panel">
-    <div class="controls-title">Керування стереокамерою</div>
-    
-    <div class="control-group">
-        <label for="eyeSeparation">Відстань між очима:</label>
-        <input type="range" id="eyeSeparation" min="0.1" max="2.0" step="0.1" value="0.7">
-        <input type="number" id="eyeSeparationValue" min="0.1" max="2.0" step="0.1" value="0.7">
-    </div>
-    
-    <div class="control-group">
-        <label for="convergence">Конвергенція:</label>
-        <input type="range" id="convergence" min="5.0" max="30.0" step="0.5" value="14.0">
-        <input type="number" id="convergenceValue" min="5.0" max="30.0" step="0.5" value="14.0">
-    </div>
-    
-    <div class="control-group">
-        <label for="aspectRatio">Співвідношення сторін:</label>
-        <input type="range" id="aspectRatio" min="0.5" max="3.0" step="0.1" value="1.3">
-        <input type="number" id="aspectRatioValue" min="0.5" max="3.0" step="0.1" value="1.3">
-    </div>
-    
-    <div class="control-group">
-        <label for="fov">Поле зору (радіани):</label>
-        <input type="range" id="fov" min="0.1" max="1.5" step="0.05" value="0.4">
-        <input type="number" id="fovValue" min="0.1" max="1.5" step="0.05" value="0.4">
-    </div>
-    
-    <div class="phone-controls">
-        <div class="controls-title">Підключення до телефону</div>
-        
-        <label for="wsUrl">WebSocket URL:</label>
-        <input type="text" id="wsUrl" class="text-input" value="ws://192.168.31.19:8080/sensor/connect?type=android.sensor.game_rotation_vector">
-        
-        <div class="button-row">
-            <button id="connectBtn" class="action-button">Підключити</button>
-            <button id="disconnectBtn" class="action-button" disabled>Відключити</button>
-        </div>
-        
-        <div class="connection-status">
-            Статус: <span id="connectionStatus">Відключено</span>
-        </div>
-        
-        <div class="controls-title" style="margin-top: 15px; font-size: 16px;">Значення сенсорів (Кватерніон)</div>
-        <div class="sensor-value-grid">
-            <div class="sensor-value-item">
-                <span class="sensor-label">X:</span>
-                <span id="sensorValueX" class="sensor-value">0.00</span>
-            </div>
-            <div class="sensor-value-item">
-                <span class="sensor-label">Y:</span>
-                <span id="sensorValueY" class="sensor-value">0.00</span>
-            </div>
-            <div class="sensor-value-item">
-                <span class="sensor-label">Z:</span>
-                <span id="sensorValueZ" class="sensor-value">0.00</span>
-            </div>
-            <div class="sensor-value-item">
-                <span class="sensor-label">W:</span>
-                <span id="sensorValueW" class="sensor-value">0.00</span>
-            </div>
-        </div>
-    </div>
-</div>
+<body>
+  <div class="loading" id="loading">Initializing AR Camera...</div>
+  <div class="title">Astroidal Torus AR</div>
+  <div class="info-panel" id="info">Looking for marker...</div>
+  <div class="instructions" id="instructions">Point your camera at the marker to see the 3D model</div>
 
-<div id="canvas-holder">
-   <canvas width="600" height="600" id="webglcanvas" style="background-color:red"></canvas>
-</div>
+  <a-scene embedded vr-mode-ui="enabled: false;"
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+    <a-marker type="pattern" preset="custom" url="./marker.patt" id="marker">
+      <a-entity id="sievert-surface"
+                position="0 0.5 0"
+                rotation="-90 0 0" 
+                scale="0.35 0.35 0.35"
+                sievert-surface="C: 1; uSteps: 50; vSteps: 50; color: #4fc3f7; wireframe: false"
+                multi-axis-rotation="enabled: true; speed: 0.3; mode: y">
+      </a-entity>
+    </a-marker>
 
+    <a-entity camera></a-entity>
+  </a-scene>
 
-</body></html>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const marker = document.querySelector('#marker');
+      const surfaceEntity = document.getElementById('sievert-surface');
+      const infoPanel = document.getElementById('info');
+      const loadingPanel = document.getElementById('loading');
+      const instructionsPanel = document.getElementById('instructions');
+      
+      setTimeout(() => {
+        loadingPanel.style.display = 'none';
+      }, 3000);
+      
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isTablet = /iPad|tablet|Tablet/i.test(navigator.userAgent) || 
+                       (isMobile && Math.min(window.screen.width, window.screen.height) > 480);
+      
+      console.log("Device:", {
+        isMobile: isMobile,
+        isTablet: isTablet,
+        userAgent: navigator.userAgent,
+        screenWidth: window.screen.width,
+        screenHeight: window.screen.height
+      });
+
+      if (isMobile && !isTablet) {
+        surfaceEntity.setAttribute('scale', '0.25 0.25 0.25');
+        infoPanel.textContent = 'Looking for marker... (Mobile)';
+        console.log("Applied mobile settings");
+      } else if (isTablet) {
+        surfaceEntity.setAttribute('scale', '0.3 0.3 0.3');
+        infoPanel.textContent = 'Looking for marker... (Tablet)';
+        console.log("Applied tablet settings");
+      } else {
+        surfaceEntity.setAttribute('scale', '0.35 0.35 0.35');
+        infoPanel.textContent = 'Looking for marker... (Desktop)';
+        console.log("Applied desktop settings");
+      }
+      
+      marker.addEventListener('markerFound', function() {
+        infoPanel.textContent = '✓ Marker detected!';
+        infoPanel.className = 'info-panel marker-found';
+        instructionsPanel.style.display = 'none';
+        console.log('Marker found!');
+      });
+      
+      marker.addEventListener('markerLost', function() {
+        infoPanel.textContent = '✗ Marker lost';
+        infoPanel.className = 'info-panel marker-lost';
+        instructionsPanel.style.display = 'block';
+        console.log('Marker lost!');
+      });
+    });
+  </script>
+</body>
+</html>
+
